@@ -12,7 +12,7 @@ func main() {
 	fmt.Println("Starting Backend")
 
 	// Start the video processing pipeline.
-	video.StartPipeline("sample/FireForce-S1E3-360P.mp4")
+	video.StartPipeline("video/sample/FireForce-S1E3-360P.mp4")
 
 	// Handle WebSocket connections.
 	http.HandleFunc("/ws", streaming.ServeWS)
