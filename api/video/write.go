@@ -2,8 +2,11 @@ package video
 
 import (
 	"bufio"
-	"os/exec"
+	"log"
+	"os"
 )
+
+var QuantizedFrameChan = make(chan []byte, 30)
 
 func SaveToDAT(filename string) error {
 	file, err := os.Create(filename)
