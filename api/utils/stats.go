@@ -1,19 +1,27 @@
-package video
+package utils
 
 import (
 	"log"
+	"sync/atomic"
 	"time"
+)
+
+var ( 
+    // Total frames processed since the application started.
+    TotalFrames uint64
 )
 
 func init() {
 	go func() {
 		ticker := time.NewTicker(5 * time.Second)
 		defer ticker.Stop()
-		count := 0
 		for range ticker.C {
-			// WIP, track frame count, bandwidth, etc.
-			log.Printf("Stats: %d frames processed (placeholder)", count)
-			count++
+			log.Printf("Stats: %d frames processed", atomic.LoadUint64(&TotalFrames))
 		}
 	}()
+}
+
+// IncrementFrameCount increments the total frame count by one.
+func IncrementFrameCount() {
+	atomic.AddUint64(&TotalFrames, 1)
 }
