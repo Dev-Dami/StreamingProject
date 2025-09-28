@@ -8,13 +8,22 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+// Upgrades HTTP connections to WebSocket connections.
 var upgrader = websocket.Upgrader{
-		CheckOrigin: func(r *http.Request) bool { return true },
+	CheckOrigin: func(r *http.Request) bool { return true },
 }
 
+// connected clients.
 var clients = make(map[*websocket.Conn]bool)
+
+// broadcast channel.
 var broadcast = make(chan []byte, 30)
 
+func init() {
+	go broadcaster()
+}
+
+// Handle WebSocket connections.
 func ServeWS(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -40,6 +49,7 @@ func ServeWS(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// Broadcast frame to all clients.
 func Broadcast(frame []byte) {
 	select {
 	case broadcast <- frame:
@@ -47,6 +57,7 @@ func Broadcast(frame []byte) {
 	}
 }
 
+// broadcaster.
 func broadcaster() {
 	for frame := range broadcast {
 		for conn := range clients {
