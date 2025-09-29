@@ -7,9 +7,9 @@ import (
 	"time"
 )
 
-var ( 
-    // Total frames processed since the application started.
-    TotalFrames uint64
+var (
+	// TotalFrames is the number of frames processed since the application started.
+	TotalFrames uint64
 )
 
 =======
