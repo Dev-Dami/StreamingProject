@@ -4,14 +4,15 @@ import (
 	"bytes"
 	"image/jpeg"
 	"log"
-	"api/streaming"
+	"video-streamer/streaming"
 )
+
+var QuantFrameChan = make(chan []byte, 30)
 
 func init() {
 	go processFrame()
 }
 
-// Processes frames from the FrameChan, quantizes them, and broadcasts them.
 func processFrame() {
 	for frame := range FrameChan {
 		quant, err := quantFrame(frame)
@@ -19,11 +20,11 @@ func processFrame() {
 			log.Println("Quant error:", err)
 			continue
 		}
+		QuantFrameChan <- quant
 		streaming.Broadcast(quant)
 	}
 }
 
-// Quantizes a JPEG image by reducing its quality.
 func quantFrame(jpegData []byte) ([]byte, error) {
 	img, err := jpeg.Decode(bytes.NewReader(jpegData))
 	if err != nil {

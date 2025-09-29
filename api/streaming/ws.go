@@ -25,6 +25,7 @@ func init() {
 
 // Handle WebSocket connections.
 func ServeWS(w http.ResponseWriter, r *http.Request) {
+	go broadcaster()
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Print("WebSocket upgrade:", err)

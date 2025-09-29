@@ -58,8 +58,8 @@ func readAndDecode(videoPath string) {
 		// Find end of image marker
 		eoi := bytes.Index(buffer[soi:frameEnd], []byte{0xff, 0xd9})
 		if eoi == -1 {
-			continue
-		}
+			continue		}
+
 
 		frame = make([]byte, soi+eoi+2)
 		copy(frame, buffer[soi:soi+eoi+2])

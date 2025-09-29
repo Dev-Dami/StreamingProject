@@ -11,7 +11,7 @@ import (
 
 var QuantizedFrameChan = make(chan []byte, 30)
 
-// QuantizeFrame takes a raw JPEG/PNG frame (or raw bytes), re-encodes it with
+// QuantizeFrame takes a raw JPEG/PNG frame, re-encodes it with
 // lower quality, and sends it into the QuantizedFrameChan.
 func QuantizeFrame(frame []byte, quality int) {
 	// Decode frame
@@ -29,7 +29,7 @@ func QuantizeFrame(frame []byte, quality int) {
 		return
 	}
 
-	// Send quantized frame to channel (non-blocking fallback)
+	// Send quantized frame to channel
 	select {
 	case QuantizedFrameChan <- buf.Bytes():
 	default:
@@ -56,7 +56,7 @@ func SaveToDAT(filename string) error {
 	return nil
 }
 
-// ReconstructMP4 will eventually split .dat into JPEGs and rebuild into MP4.
+// ReconstructMP4 -> .dat -> JPEGs -> MP4.
 func ReconstructMP4(datFile, mp4File string) {
 	// TODO: implement splitting .dat into JPEG frames then use ffmpeg/libx264
 	log.Println("Reconstruction to be added")
