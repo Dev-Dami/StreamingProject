@@ -1,8 +1,6 @@
 package video
 
-imprt (
-	"bytes"
-	"image/jpeg"
+import (
 	"log"
 	"os/exec"
 	"time"
@@ -18,16 +16,16 @@ func readAndDecode(videoPath string) {
 	cmd := exec.Command("ffmpeg",
 		"-i", videoPath,
 		"-vf", "fps=10",
-		"f", "image2pipe",
-		"-q:v", "1", "-"
+		"-f", "image2pipe",
+		"-q:v", "1", "-",
 	)
 
-	stdout, err := cmd.stdoutPipe()
+	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		log.Fatal("ffmpeg stdout Pipe:", err)
 	}
 	if err := cmd.Start(); err != nil {
-		Log.Fatal("ffmpeg Start:", err)
+		log.Fatal("ffmpeg Start:", err)
 	}
 	buf := make([]byte, 1024*1024)
 	for {
@@ -36,13 +34,13 @@ func readAndDecode(videoPath string) {
 			break
 		}
 		frame := make([]byte, n)
-		copy(frame, buff[:n])
+		copy(frame, buf[:n])
 
 		select {
 		case FrameChan <- frame:
 		default:
 		}
-		time.Sleep(10 * time.Milliseconds)
+		time.Sleep(10 * time.Millisecond)
 	}
 	cmd.Wait()
 	close(FrameChan)

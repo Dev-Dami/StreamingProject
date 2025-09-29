@@ -2,10 +2,9 @@ package video
 
 import (
 	"bytes"
-	"image"
 	"image/jpeg"
 	"log"
-	"api/streaming"
+	"video-streamer/streaming"
 )
 
 var QuantFrameChan = make(chan []byte, 30)
@@ -21,20 +20,20 @@ func processFrame() {
 			log.Println("Quant error:", err)
 			continue
 		}
-		QuantFrameChan <- quantized
-		streaming.Broadcast(quantized)
+		QuantFrameChan <- quant
+		streaming.Broadcast(quant)
 	}
 }
 
-func quantFrame(jpegData[]byte) ([]byte, error) {
-	img, err := jpeg.Decode(bytes.NewReder(jpegData))
+func quantFrame(jpegData []byte) ([]byte, error) {
+	img, err := jpeg.Decode(bytes.NewReader(jpegData))
 	if err != nil {
 		return nil, err
 	}
 	var buf bytes.Buffer
-	err = jped.Encode(&buf, img, &jpeg.Options{Quality: 30})
+	err = jpeg.Encode(&buf, img, &jpeg.Options{Quality: 30})
 	if err != nil {
-		return nil, err 
+		return nil, err
 	}
 	return buf.Bytes(), nil
 }

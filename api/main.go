@@ -5,17 +5,17 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"api/streaming"
-	"api/video"
+	"video-streamer/streaming"
+	"video-streamer/video"
 )
 
-func main () {
-	fmt.println("Starting Backend")
+func main() {
+	fmt.Println("Starting Backend")
 
-	video.StartPipeline("sample/input.mp4")
+	video.StartPipeline("video/sample/FireForce-S1E3-360P.mp4")
 
-	http.HandleFunc("/ws", Streaming.ServeWS)
+	http.HandleFunc("/ws", streaming.ServeWS)
 
-	log.println("server is running")
-	log.Fatal(http.ListenAndServe(":8080, nil"))
+	log.Println("server is running")
+	log.Fatal(http.ListenAndServe(":8080", nil))
 }

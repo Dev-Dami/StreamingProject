@@ -16,6 +16,7 @@ var clients = make(map[*websocket.Conn]bool)
 var broadcast = make(chan []byte, 30)
 
 func ServeWS(w http.ResponseWriter, r *http.Request) {
+	go broadcaster()
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Print("WebSocket upgrade:", err)
