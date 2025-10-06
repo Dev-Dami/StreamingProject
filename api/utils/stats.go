@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 package utils
 
 import (
@@ -8,41 +7,47 @@ import (
 )
 
 var (
-	// TotalFrames is the number of frames processed since the application started.
-	TotalFrames uint64
+	// FramesProcessed counts total frames processed
+	FramesProcessed uint64
+	// FramesBroadcast counts total frames broadcast to clients
+	FramesBroadcast uint64
+	// ClientConnections tracks current client count
+	ClientConnections uint64
 )
 
-=======
-package video
-
-import (
-	"log"
-	"time"
-)
-
->>>>>>> 6b02c2f6467c8679a14d337174326567ec50c5ae
+// Initialize stats reporting
 func init() {
-	go func() {
-		ticker := time.NewTicker(5 * time.Second)
-		defer ticker.Stop()
-<<<<<<< HEAD
-		for range ticker.C {
-			log.Printf("Stats: %d frames processed", atomic.LoadUint64(&TotalFrames))
-		}
-	}()
+	go startStatsReporter()
 }
 
-// IncrementFrameCount increments the total frame count by one.
-func IncrementFrameCount() {
-	atomic.AddUint64(&TotalFrames, 1)
-}
-=======
-		count := 0
-		for range ticker.C {
-			// WIP, track frame count, bandwidth, etc.
-			log.Printf("Stats: %d frames processed (placeholder)", count)
-			count++
+// startStatsReporter runs periodic stats logging
+func startStatsReporter() {
+	ticker := time.NewTicker(10 * time.Second)
+	defer ticker.Stop()
+	
+	for range ticker.C {
+		processed := atomic.LoadUint64(&FramesProcessed)
+		broadcast := atomic.LoadUint64(&FramesBroadcast)
+		clients := atomic.LoadUint64(&ClientConnections)
+		
+		if processed > 0 || broadcast > 0 {
+			log.Printf("Stats - Processed: %d frames, Broadcast: %d frames, Clients: %d", 
+				processed, broadcast, clients)
 		}
-	}()
+	}
 }
->>>>>>> 6b02c2f6467c8679a14d337174326567ec50c5ae
+
+// IncrementProcessed increments processed frame counter
+func IncrementProcessed() {
+	atomic.AddUint64(&FramesProcessed, 1)
+}
+
+// IncrementBroadcast increments broadcast frame counter
+func IncrementBroadcast() {
+	atomic.AddUint64(&FramesBroadcast, 1)
+}
+
+// SetClientCount sets the current client count
+func SetClientCount(count uint64) {
+	atomic.StoreUint64(&ClientConnections, count)
+}
