@@ -3,69 +3,142 @@ package streaming
 import (
 	"log"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
 )
 
-// Upgrades HTTP connections to WebSocket connections.
+// Client represents a WebSocket client
+type Client struct {
+	conn  *websocket.Conn
+	mutex sync.Mutex
+	id    int
+}
+
+// WriteMessage safely writes a message to the WebSocket
+func (c *Client) WriteMessage(messageType int, data []byte) error {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	return c.conn.WriteMessage(messageType, data)
+}
+
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool { return true },
 }
 
-// connected clients.
-var clients = make(map[*websocket.Conn]bool)
+var (
+	clients      = make(map[*Client]bool)
+	clientsMutex sync.RWMutex
+	broadcast    = make(chan []byte, 200) // Larger buffer
+	clientIDGen  = 0
+)
 
-// broadcast channel.
-var broadcast = make(chan []byte, 30)
-
+// Start broadcaster when package loads
 func init() {
-	go broadcaster()
+	go startBroadcaster()
 }
 
-// Handle WebSocket connections.
+// ServeWS handles WebSocket connections
 func ServeWS(w http.ResponseWriter, r *http.Request) {
-	go broadcaster()
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Print("WebSocket upgrade:", err)
+		log.Printf("WebSocket upgrade failed: %v", err)
 		return
 	}
-	defer conn.Close()
 
-	clients[conn] = true
-	defer delete(clients, conn)
+	clientsMutex.Lock()
+	clientIDGen++
+	client := &Client{
+		conn: conn,
+		id:   clientIDGen,
+	}
+	clients[client] = true
+	log.Printf("Client %d connected. Total clients: %d", client.id, len(clients))
+	clientsMutex.Unlock()
 
-	// Keep connection alive
+	// Handle client cleanup
+	defer func() {
+		conn.Close()
+		clientsMutex.Lock()
+		delete(clients, client)
+		log.Printf("Client %d disconnected. Total clients: %d", client.id, len(clients))
+		clientsMutex.Unlock()
+	}()
+
+	// Keep connection alive with ping/pong
 	ticker := time.NewTicker(30 * time.Second)
 	defer ticker.Stop()
 
+	// Read messages to detect client disconnection
+	go func() {
+		for {
+			_, _, err := conn.ReadMessage()
+			if err != nil {
+				return // This will trigger the defer cleanup
+			}
+		}
+	}()
+
+	// Send periodic pings
 	for {
 		select {
 		case <-ticker.C:
-			if err := conn.WriteMessage(websocket.PingMessage, nil); err != nil {
-				return
+			if err := client.WriteMessage(websocket.PingMessage, nil); err != nil {
+				return // Connection failed
 			}
 		}
 	}
 }
 
-// Broadcast frame to all clients.
+// Broadcast sends frame to all connected clients
 func Broadcast(frame []byte) {
 	select {
 	case broadcast <- frame:
+		// Frame queued successfully
 	default:
+		// Channel full, drop frame (this is okay for video streaming)
 	}
 }
 
-// broadcaster.
-func broadcaster() {
+// startBroadcaster runs the broadcasting loop
+func startBroadcaster() {
+	log.Println("Broadcaster started")
+	frameCount := 0
+
 	for frame := range broadcast {
-		for conn := range clients {
-			if err := conn.WriteMessage(websocket.BinaryMessage, frame); err != nil {
-				delete(clients, conn)
-				conn.Close()
+		frameCount++
+		
+		clientsMutex.RLock()
+		if len(clients) == 0 {
+			clientsMutex.RUnlock()
+			continue // No clients, skip frame
+		}
+		
+		// Send frame to all clients
+		var failedClients []*Client
+		for client := range clients {
+			if err := client.WriteMessage(websocket.BinaryMessage, frame); err != nil {
+				failedClients = append(failedClients, client)
 			}
+		}
+		clientCount := len(clients)
+		clientsMutex.RUnlock()
+
+		// Remove failed clients
+		if len(failedClients) > 0 {
+			clientsMutex.Lock()
+			for _, client := range failedClients {
+				delete(clients, client)
+				client.conn.Close()
+				log.Printf("Removed failed client %d", client.id)
+			}
+			clientsMutex.Unlock()
+		}
+
+		// Log progress
+		if frameCount%100 == 0 {
+			log.Printf("Broadcast frame %d to %d clients (size: %d bytes)", frameCount, clientCount, len(frame))
 		}
 	}
 }

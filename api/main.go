@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"api/streaming"
 	"api/video"
+	_ "api/utils" // Import for stats initialization
 )
 
 // CORS middleware
@@ -58,26 +59,31 @@ func findVideoFile() string {
 }
 
 func main() {
-	fmt.Println("Starting Video Streamer Backend")
-	fmt.Println("=================================")
+	fmt.Println("Video Streamer Backend")
+	fmt.Println("======================")
 
-	// Find video file
+	// Find and validate video file
 	videoPath := findVideoFile()
-	if videoPath != "" {
-		fmt.Printf("Using video file: %s\n", videoPath)
-		video.StartPipeline(videoPath)
-	} else {
-		fmt.Println("No video file found - WebSocket server will start but no video will stream")
+	if videoPath == "" {
+		log.Fatal("No video file found! Place a video file (sample.mp4, test.mp4, or video.mp4) in the current directory.")
 	}
 
-	// Setup routes
+	fmt.Printf("Using video file: %s\n", videoPath)
+
+	// Import video package to trigger frame processing initialization
+	_ = video.FrameChan
+
+	// Start video processing pipeline
+	video.StartPipeline(videoPath)
+
+	// Setup HTTP routes
 	http.HandleFunc("/ws", enableCORS(streaming.ServeWS))
 	http.HandleFunc("/health", enableCORS(healthCheck))
 
-	fmt.Println("Server starting on http://localhost:8080")
-	fmt.Println("   - WebSocket endpoint: ws://localhost:8080/ws")
-	fmt.Println("   - Health check: http://localhost:8080/health")
-	fmt.Println("=================================")
+	fmt.Println("Server running on http://localhost:8080")
+	fmt.Println("WebSocket: ws://localhost:8080/ws")
+	fmt.Println("Health: http://localhost:8080/health")
+	fmt.Println("======================")
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
