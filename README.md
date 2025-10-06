@@ -62,7 +62,7 @@ The application consists of two main components:
 Start the backend server:
 ```bash
 cd api
-go run main.go
+go run .
 ```
 
 Start the frontend development server:
@@ -78,7 +78,7 @@ Access the application at http://localhost:5173
 Build the backend:
 ```bash
 cd api
-go build -o video-streamer main.go
+go build .
 ```
 
 Build the frontend:
@@ -134,8 +134,8 @@ Modify these settings in the respective source files:
 
 ### Backend
 ```bash
-go run main.go        # Run development server
-go build main.go      # Build for production
+go run .              # Run development server
+go build .            # Build for production
 go test ./...         # Run tests
 go fmt ./...          # Format code
 ```
