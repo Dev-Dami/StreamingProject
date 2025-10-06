@@ -51,7 +51,8 @@ func findVideoFile() string {
 	// If no video found, create a placeholder message
 	log.Println("No video file found. Please place a video file in one of these locations:")
 	for _, path := range possiblePaths {
-		log.Printf("  - %s", filepath.Abs(path))
+		abs, _ := filepath.Abs(path)
+		log.Printf("  - %s", abs)
 	}
 	return ""
 }
