@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"video-streamer/streaming"
-	"video-streamer/video"
+	"api/streaming"
+	"api/video"
 )
 
 // CORS middleware
@@ -57,23 +57,23 @@ func findVideoFile() string {
 }
 
 func main() {
-	fmt.Println("🚀 Starting Video Streamer Backend")
+	fmt.Println("Starting Video Streamer Backend")
 	fmt.Println("=================================")
 
 	// Find video file
 	videoPath := findVideoFile()
 	if videoPath != "" {
-		fmt.Printf("📹 Using video file: %s\n", videoPath)
+		fmt.Printf("Using video file: %s\n", videoPath)
 		video.StartPipeline(videoPath)
 	} else {
-		fmt.Println("⚠️  No video file found - WebSocket server will start but no video will stream")
+		fmt.Println("No video file found - WebSocket server will start but no video will stream")
 	}
 
 	// Setup routes
 	http.HandleFunc("/ws", enableCORS(streaming.ServeWS))
 	http.HandleFunc("/health", enableCORS(healthCheck))
 
-	fmt.Println("🌐 Server starting on http://localhost:8080")
+	fmt.Println("Server starting on http://localhost:8080")
 	fmt.Println("   - WebSocket endpoint: ws://localhost:8080/ws")
 	fmt.Println("   - Health check: http://localhost:8080/health")
 	fmt.Println("=================================")
