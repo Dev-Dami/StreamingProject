@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"image/jpeg"
 	"log"
-	"video-streamer/streaming"
+	"api/streaming"
 )
 
 var QuantFrameChan = make(chan []byte, 30)
